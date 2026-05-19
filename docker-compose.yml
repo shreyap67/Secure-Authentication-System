@@ -1,0 +1,69 @@
+version: "3.9"
+
+# ================================================================
+# SecureHub — Docker Compose (local development)
+# Usage: docker compose up --build
+# ================================================================
+
+services:
+
+  # ── PostgreSQL Database ──────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: securehub_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       secure_auth_db
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Flask Application ────────────────────────────────────────────
+  app:
+    build: .
+    container_name: securehub_app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FLASK_ENV:              development
+      FLASK_DEBUG:            "True"
+      SECRET_KEY:             dev-secret-key-change-in-production
+      JWT_SECRET_KEY:         dev-jwt-secret-change-in-production
+      DATABASE_URL:           postgresql://postgres:postgres@db:5432/secure_auth_db
+      BCRYPT_LOG_ROUNDS:      "10"
+      MAX_LOGIN_ATTEMPTS:     "5"
+      LOCKOUT_DURATION:       "900"
+      ADMIN_EMAIL:            admin@securehub.io
+      ADMIN_USERNAME:         admin
+      ADMIN_PASSWORD:         Admin@SecureHub123!
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./logs:/app/logs
+    command: python app.py
+
+  # ── Redis (optional: for rate limiting & token blacklist) ────────
+  redis:
+    image: redis:7-alpine
+    container_name: securehub_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg_data:

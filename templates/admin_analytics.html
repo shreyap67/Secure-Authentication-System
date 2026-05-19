@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block body %}
+<div class="radial-glow"></div>
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <a href="/" class="sidebar-brand">
+      <span class="brand-icon" style="width:28px;height:28px;font-size:0.875rem"><i class="bi bi-shield-lock-fill"></i></span>
+      SecureHub
+    </a>
+    <span class="sidebar-section-label">Admin</span>
+    <a href="/admin"            class="sidebar-link"><i class="bi bi-speedometer2 si-icon"></i> Dashboard</a>
+    <a href="/admin/analytics"  class="sidebar-link active"><i class="bi bi-bar-chart-fill si-icon"></i> Analytics</a>
+    <span class="sidebar-section-label">Account</span>
+    <a href="/dashboard" class="sidebar-link"><i class="bi bi-grid si-icon"></i> User View</a>
+    <a href="/profile"   class="sidebar-link"><i class="bi bi-person si-icon"></i> Profile</a>
+    <div class="sidebar-bottom">
+      <div class="glass-card" style="padding:0.875rem;margin-bottom:0.5rem">
+        <div class="flex items-center gap-3">
+          <div class="avatar" data-user-avatar>A</div>
+          <div>
+            <div style="font-weight:600;font-size:0.85rem" data-user-name>Admin</div>
+            <div class="badge badge-purple" style="margin-top:2px"><i class="bi bi-shield-fill"></i> Admin</div>
+          </div>
+        </div>
+      </div>
+      <a href="#" class="sidebar-link" data-action="logout">
+        <i class="bi bi-box-arrow-left si-icon"></i> Sign Out
+      </a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>Analytics Dashboard</h1>
+      <p>Platform insights, security metrics, and user activity trends</p>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid-4 stagger" id="kpi-cards">
+      <div class="glass-card stat-card">
+        <span class="stat-label">Total Users</span>
+        <span class="stat-value" id="kpi-total">—</span>
+        <span class="stat-delta"><i class="bi bi-arrow-up-short"></i> All time</span>
+      </div>
+      <div class="glass-card stat-card">
+        <span class="stat-label">2FA Adoption</span>
+        <span class="stat-value" id="kpi-2fa">—</span>
+        <span class="stat-delta" id="kpi-2fa-pct" style="color:var(--cyan)"></span>
+      </div>
+      <div class="glass-card stat-card">
+        <span class="stat-label">Login Success Rate</span>
+        <span class="stat-value" id="kpi-success">—</span>
+        <span class="stat-delta" style="color:var(--emerald)">Last 14 days</span>
+      </div>
+      <div class="glass-card stat-card">
+        <span class="stat-label">Security Alerts</span>
+        <span class="stat-value" id="kpi-alerts" style="color:var(--rose)">—</span>
+        <span class="stat-delta" style="color:var(--rose)">Failed logins</span>
+      </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="grid-2 mt-6">
+
+      <!-- User Growth -->
+      <div class="glass-card p-6">
+        <h2 style="font-size:1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem">
+          <i class="bi bi-people-fill" style="color:var(--electric-blue)"></i> User Growth (30 days)
+        </h2>
+        <canvas id="chart-growth" height="200"></canvas>
+      </div>
+
+      <!-- Login Activity -->
+      <div class="glass-card p-6">
+        <h2 style="font-size:1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem">
+          <i class="bi bi-activity" style="color:var(--emerald)"></i> Login Activity (14 days)
+        </h2>
+        <canvas id="chart-logins" height="200"></canvas>
+      </div>
+
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="grid-3 mt-6">
+
+      <!-- Role Distribution -->
+      <div class="glass-card p-6">
+        <h2 style="font-size:1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem">
+          <i class="bi bi-person-badge-fill" style="color:var(--purple-dim)"></i> Role Distribution
+        </h2>
+        <canvas id="chart-roles" height="220"></canvas>
+      </div>
+
+      <!-- Device Breakdown -->
+      <div class="glass-card p-6">
+        <h2 style="font-size:1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem">
+          <i class="bi bi-laptop" style="color:var(--cyan)"></i> Device Types
+        </h2>
+        <canvas id="chart-devices" height="220"></canvas>
+      </div>
+
+      <!-- 2FA Adoption -->
+      <div class="glass-card p-6">
+        <h2 style="font-size:1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem">
+          <i class="bi bi-shield-lock-fill" style="color:var(--amber)"></i> 2FA Adoption
+        </h2>
+        <canvas id="chart-2fa" height="220"></canvas>
+      </div>
+
+    </div>
+
+    <!-- Security Alerts + Top Actions -->
+    <div class="grid-2 mt-6">
+
+      <!-- Recent Failures -->
+      <div class="glass-card">
+        <div class="p-6" style="border-bottom:1px solid var(--border-subtle)">
+          <h2 style="font-size:1rem;display:flex;align-items:center;gap:0.5rem">
+            <i class="bi bi-exclamation-triangle-fill" style="color:var(--rose)"></i> Recent Failed Logins
+          </h2>
+        </div>
+        <div id="failures-list" style="padding:1rem">
+          <div style="text-align:center;color:var(--text-muted);padding:1rem">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Top Actions -->
+      <div class="glass-card">
+        <div class="p-6" style="border-bottom:1px solid var(--border-subtle)">
+          <h2 style="font-size:1rem;display:flex;align-items:center;gap:0.5rem">
+            <i class="bi bi-list-check" style="color:var(--electric-blue)"></i> Top Audit Events
+          </h2>
+        </div>
+        <div id="top-actions-list" style="padding:1rem">
+          <div style="text-align:center;color:var(--text-muted);padding:1rem">Loading…</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+Chart.defaults.color          = '#94a3b8';
+Chart.defaults.borderColor    = 'rgba(99,179,237,0.08)';
+Chart.defaults.font.family    = "'DM Sans', sans-serif";
+
+const COLORS = {
+  blue:   '#3b82f6', purple: '#a855f7', cyan:   '#22d3ee',
+  green:  '#10b981', amber:  '#f59e0b', rose:   '#f43f5e',
+};
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!guardRoute(true, true)) return;
+  renderUserInfo();
+
+  const [statsRes, analyticsRes] = await Promise.all([
+    API.get('/admin/stats'),
+    API.get('/admin/analytics'),
+  ]);
+
+  if (!statsRes?.success || !analyticsRes?.success) {
+    Toast.error('Failed to load analytics.');
+    return;
+  }
+
+  const s = statsRes;
+  const a = analyticsRes;
+
+  // ── KPI Cards ───────────────────────────────────────────────────
+  document.getElementById('kpi-total').textContent   = s.total_users;
+  document.getElementById('kpi-2fa').textContent     = a.twofa_stats.enabled;
+  const pct = s.total_users ? Math.round((a.twofa_stats.enabled / s.total_users) * 100) : 0;
+  document.getElementById('kpi-2fa-pct').textContent = pct + '% of users';
+
+  const totalLogins   = a.login_activity.reduce((acc, d) => acc + d.success + d.failed, 0);
+  const successLogins = a.login_activity.reduce((acc, d) => acc + d.success, 0);
+  const failedTotal   = a.login_activity.reduce((acc, d) => acc + d.failed, 0);
+  const successRate   = totalLogins ? Math.round((successLogins / totalLogins) * 100) : 100;
+  document.getElementById('kpi-success').textContent = successRate + '%';
+  document.getElementById('kpi-alerts').textContent  = failedTotal;
+
+  // ── User Growth Chart ───────────────────────────────────────────
+  new Chart(document.getElementById('chart-growth'), {
+    type: 'line',
+    data: {
+      labels:   a.user_growth.map(d => d.date),
+      datasets: [{
+        label: 'New Users',
+        data:  a.user_growth.map(d => d.count),
+        borderColor: COLORS.blue,
+        backgroundColor: 'rgba(59,130,246,0.08)',
+        tension: 0.4, fill: true, pointRadius: 3,
+        pointBackgroundColor: COLORS.blue,
+      }],
+    },
+    options: { responsive: true, plugins: { legend: { display: false } },
+               scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } },
+  });
+
+  // ── Login Activity Chart ─────────────────────────────────────────
+  new Chart(document.getElementById('chart-logins'), {
+    type: 'bar',
+    data: {
+      labels: a.login_activity.map(d => d.date),
+      datasets: [
+        { label: 'Success', data: a.login_activity.map(d => d.success),
+          backgroundColor: 'rgba(16,185,129,0.7)', borderRadius: 4 },
+        { label: 'Failed',  data: a.login_activity.map(d => d.failed),
+          backgroundColor: 'rgba(244,63,94,0.7)',  borderRadius: 4 },
+      ],
+    },
+    options: { responsive: true, plugins: { legend: { position: 'top' } },
+               scales: { x: { stacked: false }, y: { beginAtZero: true, ticks: { stepSize: 1 } } } },
+  });
+
+  // ── Role Distribution ────────────────────────────────────────────
+  new Chart(document.getElementById('chart-roles'), {
+    type: 'doughnut',
+    data: {
+      labels: a.role_distribution.map(d => d.role),
+      datasets: [{
+        data: a.role_distribution.map(d => d.count),
+        backgroundColor: [COLORS.purple, COLORS.blue, COLORS.cyan],
+        borderWidth: 0, hoverOffset: 6,
+      }],
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } },
+               cutout: '65%' },
+  });
+
+  // ── Device Breakdown ─────────────────────────────────────────────
+  new Chart(document.getElementById('chart-devices'), {
+    type: 'doughnut',
+    data: {
+      labels: a.device_breakdown.map(d => d.device),
+      datasets: [{
+        data: a.device_breakdown.map(d => d.count),
+        backgroundColor: [COLORS.blue, COLORS.green, COLORS.amber],
+        borderWidth: 0, hoverOffset: 6,
+      }],
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } },
+               cutout: '65%' },
+  });
+
+  // ── 2FA Adoption ─────────────────────────────────────────────────
+  new Chart(document.getElementById('chart-2fa'), {
+    type: 'doughnut',
+    data: {
+      labels: ['2FA Enabled', '2FA Disabled'],
+      datasets: [{
+        data: [a.twofa_stats.enabled, a.twofa_stats.disabled],
+        backgroundColor: [COLORS.green, 'rgba(99,179,237,0.15)'],
+        borderWidth: 0, hoverOffset: 6,
+      }],
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } },
+               cutout: '65%' },
+  });
+
+  // ── Recent Failures List ─────────────────────────────────────────
+  const failEl = document.getElementById('failures-list');
+  if (a.recent_failures.length) {
+    failEl.innerHTML = a.recent_failures.map(f => `
+      <div class="flex justify-between items-center p-3" style="border-bottom:1px solid var(--border-subtle)">
+        <div class="flex items-center gap-3">
+          <i class="bi bi-x-circle-fill" style="color:var(--rose)"></i>
+          <div>
+            <div class="text-sm" style="color:var(--text-primary)">${f.ip_address || '—'}</div>
+            <div class="text-xs text-muted">${f.failure_reason || 'Login failure'}</div>
+          </div>
+        </div>
+        <div class="text-xs text-secondary">${new Date(f.created_at).toLocaleString()}</div>
+      </div>
+    `).join('');
+  } else {
+    failEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:1.5rem"><i class="bi bi-shield-check" style="font-size:1.5rem;color:var(--emerald)"></i><br>No recent failures</div>';
+  }
+
+  // ── Top Actions List ─────────────────────────────────────────────
+  const actEl  = document.getElementById('top-actions-list');
+  const maxCnt = Math.max(...a.top_actions.map(t => t.count), 1);
+  actEl.innerHTML = a.top_actions.map(t => `
+    <div style="margin-bottom:0.875rem">
+      <div class="flex justify-between items-center" style="margin-bottom:0.25rem">
+        <span class="text-sm font-mono" style="color:var(--text-primary)">${t.action}</span>
+        <span class="badge badge-blue">${t.count}</span>
+      </div>
+      <div style="height:4px;background:var(--bg-overlay);border-radius:2px">
+        <div style="height:100%;width:${Math.round((t.count/maxCnt)*100)}%;
+          background:var(--grad-brand);border-radius:2px;transition:width 0.6s"></div>
+      </div>
+    </div>
+  `).join('');
+});
+</script>
+{% endblock %}

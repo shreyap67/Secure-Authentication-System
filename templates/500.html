@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Server Error{% endblock %}
+{% block body %}
+<div class="radial-glow"></div>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;position:relative;z-index:1">
+  <div class="text-center animate-fade-in-up" style="max-width:480px">
+    <div style="font-family:var(--font-display);font-size:7rem;font-weight:800;line-height:1;background:var(--grad-text);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:1rem">500</div>
+    <h1 style="font-size:1.75rem;font-weight:700;margin-bottom:0.75rem">Internal Server Error</h1>
+    <p class="text-secondary" style="margin-bottom:2rem">Something went wrong on our end. The error has been logged and we're looking into it.</p>
+    <a href="/" class="btn btn-primary"><i class="bi bi-arrow-counterclockwise"></i> Try Again</a>
+  </div>
+</div>
+{% endblock %}

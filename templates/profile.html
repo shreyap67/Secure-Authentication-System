@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+{% block title %}Profile Settings{% endblock %}
+
+{% block body %}
+<div class="radial-glow"></div>
+
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <a href="/" class="sidebar-brand">
+      <span class="brand-icon" style="width:28px;height:28px;font-size:0.875rem"><i class="bi bi-shield-lock-fill"></i></span>
+      SecureHub
+    </a>
+    <span class="sidebar-section-label">Main</span>
+    <a href="/dashboard" class="sidebar-link"><i class="bi bi-grid-fill si-icon"></i> Dashboard</a>
+    <a href="/profile"   class="sidebar-link active"><i class="bi bi-person-fill si-icon"></i> Profile</a>
+    <span class="sidebar-section-label">Security</span>
+    <a href="#" class="sidebar-link" onclick="showTab('sessions'); return false;"><i class="bi bi-laptop si-icon"></i> Sessions</a>
+    <a href="#" class="sidebar-link" onclick="showTab('history'); return false;"><i class="bi bi-clock-history si-icon"></i> Login History</a>
+    <div class="sidebar-bottom">
+      <div class="glass-card" style="padding:0.875rem;margin-bottom:0.5rem">
+        <div class="flex items-center gap-3">
+          <div class="avatar" data-user-avatar>?</div>
+          <div style="min-width:0">
+            <div style="font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-user-name>User</div>
+            <div class="badge badge-blue" data-user-role style="margin-top:2px">user</div>
+          </div>
+        </div>
+      </div>
+      <a href="#" class="sidebar-link" data-action="logout">
+        <i class="bi bi-box-arrow-left si-icon"></i> Sign Out
+      </a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- Tab Nav -->
+    <div style="display:flex;gap:0.5rem;margin-bottom:2rem;border-bottom:1px solid var(--border-subtle);padding-bottom:0">
+      {% for tab, icon, label in [('profile','person-fill','Profile'),('security','shield-lock-fill','Security'),('2fa','qr-code-scan','Two-Factor Auth'),('sessions','laptop','Sessions'),('history','clock-history','Login History')] %}
+      <button class="tab-btn" id="tab-{{ tab }}" onclick="showTab('{{ tab }}')"
+        style="background:none;border:none;padding:0.625rem 1rem;font-size:0.875rem;font-weight:500;
+        color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;
+        transition:all 0.2s;display:flex;align-items:center;gap:0.375rem;white-space:nowrap">
+        <i class="bi bi-{{ icon }}"></i> {{ label }}
+      </button>
+      {% endfor %}
+    </div>
+
+    <!-- ── PROFILE TAB ─────────────────────────────────────────── -->
+    <div id="tab-content-profile" class="tab-content">
+      <div class="grid-2" style="align-items:start">
+        <div class="glass-card p-6">
+          <h2 style="font-size:1rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.5rem">
+            <i class="bi bi-person-circle" style="color:var(--electric-blue)"></i> Personal Information
+          </h2>
+          <div class="flex items-center gap-4" style="margin-bottom:1.75rem">
+            <div class="avatar avatar-xl" data-user-avatar>?</div>
+            <div>
+              <div style="font-weight:700;font-size:1.1rem" data-user-name>Loading…</div>
+              <div class="text-secondary text-sm" data-user-email>—</div>
+              <span class="badge badge-blue" data-user-role style="margin-top:0.375rem">user</span>
+            </div>
+          </div>
+          <div id="profile-alert"></div>
+          <form id="profile-form" class="flex flex-col gap-4" action="#" method="post" onsubmit="return false;">
+            <div class="grid-2" style="gap:0.875rem">
+              <div class="form-group">
+                <label class="form-label" for="first_name">First Name</label>
+                <input type="text" id="first_name" class="form-control" placeholder="Jane" autocomplete="off" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="last_name">Last Name</label>
+                <input type="text" id="last_name" class="form-control" placeholder="Doe" autocomplete="off" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Username</label>
+              <div class="input-wrapper">
+                <i class="bi bi-at input-icon"></i>
+                <input type="text" id="disp-username" class="form-control" disabled style="opacity:0.6" />
+              </div>
+              <span class="form-hint">Username cannot be changed.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <div class="input-wrapper">
+                <i class="bi bi-envelope input-icon"></i>
+                <input type="text" id="disp-email" class="form-control" disabled style="opacity:0.6" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bio">Bio</label>
+              <textarea id="bio" class="form-control" rows="3" placeholder="Tell us a little about yourself…" style="resize:vertical"></textarea>
+            </div>
+            <button type="button" id="profile-btn" class="btn btn-primary btn-full" onclick="saveProfile()">
+              <i class="bi bi-check-lg"></i> Save Changes
+            </button>
+          </form>
+        </div>
+
+        <!-- Security Info -->
+        <div class="glass-card p-6">
+          <h2 style="font-size:1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem">
+            <i class="bi bi-info-circle-fill" style="color:var(--cyan)"></i> Account Security
+          </h2>
+          <div class="flex flex-col gap-3" id="security-info">
+            <div class="skeleton" style="height:20px"></div>
+            <div class="skeleton" style="height:20px"></div>
+            <div class="skeleton" style="height:20px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SECURITY TAB ────────────────────────────────────────── -->
+    <div id="tab-content-security" class="tab-content" style="display:none">
+      <div class="glass-card p-6" style="max-width:520px">
+        <h2 style="font-size:1rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.5rem">
+          <i class="bi bi-shield-lock-fill" style="color:var(--purple-dim)"></i> Change Password
+        </h2>
+        <div id="password-alert"></div>
+        <form id="password-form" class="flex flex-col gap-4" action="#" method="post" onsubmit="return false;">
+          <div class="form-group">
+            <label class="form-label" for="current_password">Current Password</label>
+            <div class="input-wrapper">
+              <i class="bi bi-lock input-icon"></i>
+              <input type="password" id="current_password" class="form-control" placeholder="••••••••" autocomplete="off" />
+              <button type="button" class="input-toggle" data-toggle-password="current_password"><i class="bi bi-eye"></i></button>
+            </div>
+            <span class="form-error" id="current_password-error"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new_password">New Password</label>
+            <div class="input-wrapper">
+              <i class="bi bi-lock-fill input-icon"></i>
+              <input type="password" id="new_password" class="form-control" placeholder="Min 8 chars, upper, lower, number, symbol" autocomplete="off" />
+              <button type="button" class="input-toggle" data-toggle-password="new_password"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="strength-bar" style="margin-top:0.375rem"><div class="strength-fill" id="pw-fill" style="width:0%"></div></div>
+            <span class="strength-label" id="pw-label"></span>
+            <span class="form-error" id="new_password-error"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="confirm_new">Confirm New Password</label>
+            <div class="input-wrapper">
+              <i class="bi bi-lock-fill input-icon"></i>
+              <input type="password" id="confirm_new" class="form-control" placeholder="••••••••" autocomplete="off" />
+              <button type="button" class="input-toggle" data-toggle-password="confirm_new"><i class="bi bi-eye"></i></button>
+            </div>
+            <span class="form-error" id="confirm_new-error"></span>
+          </div>
+          <button type="button" id="password-btn" class="btn btn-ghost btn-full" onclick="changePassword()">
+            <i class="bi bi-shield-lock"></i> Update Password
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── 2FA TAB ─────────────────────────────────────────────── -->
+    <div id="tab-content-2fa" class="tab-content" style="display:none">
+      <div id="2fa-panel">
+        <!-- Rendered by JS based on user.totp_enabled -->
+        <div style="text-align:center;color:var(--text-muted);padding:3rem">Loading…</div>
+      </div>
+    </div>
+
+    <!-- ── SESSIONS TAB ────────────────────────────────────────── -->
+    <div id="tab-content-sessions" class="tab-content" style="display:none">
+      <div class="page-header" style="margin-bottom:1.5rem">
+        <h1 style="font-size:1.25rem">Active Sessions</h1>
+        <p>Devices currently signed into your account</p>
+      </div>
+      <div class="glass-card">
+        <div class="p-6 flex justify-between items-center" style="border-bottom:1px solid var(--border-subtle)">
+          <h2 style="font-size:1rem;display:flex;align-items:center;gap:0.5rem">
+            <i class="bi bi-laptop" style="color:var(--electric-blue)"></i>
+            Active Sessions <span class="badge badge-blue" id="sessions-count" style="margin-left:0.5rem">0</span>
+          </h2>
+          <button class="btn btn-danger btn-sm" onclick="revokeAll()">
+            <i class="bi bi-shield-x"></i> Revoke All
+          </button>
+        </div>
+        <div id="sessions-list" style="padding:1.5rem">
+          <div style="text-align:center;color:var(--text-muted);padding:2rem">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LOGIN HISTORY TAB ───────────────────────────────────── -->
+    <div id="tab-content-history" class="tab-content" style="display:none">
+      <div class="page-header" style="margin-bottom:1.5rem">
+        <h1 style="font-size:1.25rem">Login History</h1>
+        <p>Complete record of all sign-in attempts on your account</p>
+      </div>
+      <div class="glass-card">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>Status</th><th>IP Address</th><th>Device</th><th>Browser</th><th>OS</th><th>Time</th></tr>
+            </thead>
+            <tbody id="history-tbody">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="flex items-center justify-between p-6" style="border-top:1px solid var(--border-subtle)">
+          <button class="btn btn-ghost btn-sm" id="hist-prev" onclick="histPage(-1)" disabled>
+            <i class="bi bi-chevron-left"></i> Previous
+          </button>
+          <span class="text-sm text-secondary" id="hist-page-label">Page 1</span>
+          <button class="btn btn-ghost btn-sm" id="hist-next" onclick="histPage(1)">
+            Next <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── APPEARANCE TAB ─────────────────────────────────────── -->
+
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentUser  = null;
+let histCurrPage = 1;
+let histTotalPages = 1;
+
+// ── Init ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!guardRoute(true)) return;
+  initPasswordStrength('new_password', 'pw-fill', 'pw-label');
+
+  const res = await API.get('/auth/me');
+  if (!res?.success) { Auth.clearTokens(); window.location.href = '/login'; return; }
+
+  currentUser = res.user;
+  Auth.setUser(currentUser);
+  renderUserInfo();
+
+  // Pre-fill form
+  document.getElementById('first_name').value    = currentUser.first_name || '';
+  document.getElementById('last_name').value     = currentUser.last_name  || '';
+  document.getElementById('bio').value           = currentUser.bio        || '';
+  document.getElementById('disp-username').value = currentUser.username;
+  document.getElementById('disp-email').value    = currentUser.email;
+
+  // Security info panel
+  document.getElementById('security-info').innerHTML = `
+    <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--border-subtle)">
+      <span class="text-secondary text-sm">Email Verified</span>
+      <span class="badge badge-${currentUser.is_verified?'green':'amber'}">${currentUser.is_verified?'✓ Verified':'Pending'}</span>
+    </div>
+    <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--border-subtle)">
+      <span class="text-secondary text-sm">Two-Factor Auth</span>
+      <span class="badge badge-${currentUser.totp_enabled?'green':'red'}">${currentUser.totp_enabled?'Enabled':'Disabled'}</span>
+    </div>
+    <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--border-subtle)">
+      <span class="text-secondary text-sm">Last Login</span>
+      <span class="font-mono text-xs" style="color:var(--text-secondary)">${currentUser.last_login_at ? new Date(currentUser.last_login_at).toLocaleString() : '—'}</span>
+    </div>
+    <div class="flex justify-between items-center" style="padding:0.5rem 0;border-bottom:1px solid var(--border-subtle)">
+      <span class="text-secondary text-sm">Login IP</span>
+      <span class="font-mono text-xs" style="color:var(--text-secondary)">${currentUser.last_login_ip || '—'}</span>
+    </div>
+    <div class="flex justify-between items-center" style="padding:0.5rem 0">
+      <span class="text-secondary text-sm">Failed Attempts</span>
+      <span class="badge badge-${currentUser.failed_login_attempts > 0 ? 'amber':'green'}">${currentUser.failed_login_attempts}</span>
+    </div>
+  `;
+
+  // Active tab from URL hash or default
+  const hash = window.location.hash.replace('#','') || 'profile';
+  showTab(hash);
+
+});
+
+// ── Tab switching ─────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.style.borderBottomColor = 'transparent';
+    btn.style.color = 'var(--text-muted)';
+  });
+
+  const content = document.getElementById('tab-content-' + name);
+  const btn     = document.getElementById('tab-' + name);
+  if (content) content.style.display = 'block';
+  if (btn) {
+    btn.style.borderBottomColor = 'var(--electric-blue)';
+    btn.style.color = 'var(--text-primary)';
+  }
+
+  window.location.hash = name;
+
+  // Lazy-load data
+  if (name === 'sessions') loadSessions();
+  if (name === 'history')  loadLoginHistory();
+  if (name === '2fa')      render2FAPanel();
+}
+
+// ── Profile ───────────────────────────────────────────────────────
+async function saveProfile() {
+  const btn     = document.getElementById('profile-btn');
+  const alertEl = document.getElementById('profile-alert');
+  setButtonLoading(btn, true);
+
+  const res = await API.put('/user/profile', {
+    first_name: document.getElementById('first_name').value.trim() || null,
+    last_name:  document.getElementById('last_name').value.trim()  || null,
+    bio:        document.getElementById('bio').value.trim()        || null,
+  });
+  setButtonLoading(btn, false);
+
+  if (res?.success) {
+    Auth.setUser(res.user);
+    renderUserInfo();
+    alertEl.innerHTML = `<div class="alert alert-success" style="margin-bottom:1rem"><i class="bi bi-check-circle-fill"></i><span>Profile updated.</span></div>`;
+    Toast.success('Profile saved.');
+  } else {
+    alertEl.innerHTML = `<div class="alert alert-error" style="margin-bottom:1rem"><i class="bi bi-x-circle-fill"></i><span>${res?.message||'Update failed.'}</span></div>`;
+  }
+  setTimeout(() => { alertEl.innerHTML = ''; }, 4000);
+}
+
+// ── Password ──────────────────────────────────────────────────────
+async function changePassword() {
+  clearFieldErrors();
+  const btn     = document.getElementById('password-btn');
+  const alertEl = document.getElementById('password-alert');
+  const current = document.getElementById('current_password').value;
+  const next    = document.getElementById('new_password').value;
+  const confirm = document.getElementById('confirm_new').value;
+
+  let valid = true;
+  if (!current) { showFieldError('current_password', 'Required.'); valid = false; }
+  if (!next)    { showFieldError('new_password', 'Required.'); valid = false; }
+  if (next !== confirm) { showFieldError('confirm_new', 'Passwords do not match.'); valid = false; }
+  if (!valid) return;
+
+  setButtonLoading(btn, true);
+  const res = await API.post('/user/change-password', { current_password: current, new_password: next });
+  setButtonLoading(btn, false);
+
+  if (res?.success) {
+    alertEl.innerHTML = `<div class="alert alert-success" style="margin-bottom:1rem"><i class="bi bi-check-circle-fill"></i><span>Password changed. Logging out…</span></div>`;
+    Toast.success('Password updated.');
+    setTimeout(() => logout(), 2000);
+  } else {
+    alertEl.innerHTML = `<div class="alert alert-error" style="margin-bottom:1rem"><i class="bi bi-x-circle-fill"></i><span>${res?.message||'Failed.'}</span></div>`;
+  }
+}
+
+// ── 2FA ───────────────────────────────────────────────────────────
+function render2FAPanel() {
+  const panel = document.getElementById('2fa-panel');
+  if (!currentUser) return;
+
+  if (currentUser.totp_enabled) {
+    panel.innerHTML = `
+      <div class="glass-card p-6" style="max-width:480px">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+          <div style="width:48px;height:48px;background:rgba(16,185,129,0.12);border-radius:50%;
+            display:flex;align-items:center;justify-content:center;border:1px solid rgba(16,185,129,0.25)">
+            <i class="bi bi-shield-check-fill" style="font-size:1.4rem;color:var(--emerald)"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;color:var(--text-primary)">2FA is Enabled</div>
+            <div class="text-secondary text-sm">Your account is protected with an authenticator app.</div>
+          </div>
+        </div>
+        <div id="disable-2fa-alert"></div>
+        <div class="form-group" style="margin-bottom:1rem">
+          <label class="form-label" for="disable-password">Confirm Password to Disable</label>
+          <div class="input-wrapper">
+            <i class="bi bi-lock input-icon"></i>
+            <input type="password" id="disable-password" class="form-control" placeholder="••••••••" autocomplete="off" />
+            <button type="button" class="input-toggle" data-toggle-password="disable-password"><i class="bi bi-eye"></i></button>
+          </div>
+        </div>
+        <button type="button" id="disable-2fa-btn" class="btn btn-danger btn-full" onclick="disable2FA()">
+          <i class="bi bi-shield-x"></i> Disable Two-Factor Authentication
+        </button>
+      </div>
+    `;
+    initPasswordToggles();
+  } else {
+    panel.innerHTML = `
+      <div class="glass-card p-6" style="max-width:560px">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+          <div style="width:48px;height:48px;background:rgba(245,158,11,0.12);border-radius:50%;
+            display:flex;align-items:center;justify-content:center;border:1px solid rgba(245,158,11,0.25)">
+            <i class="bi bi-shield-exclamation" style="font-size:1.4rem;color:var(--amber)"></i>
+          </div>
+          <div>
+            <div style="font-weight:700;color:var(--text-primary)">2FA is Disabled</div>
+            <div class="text-secondary text-sm">Add an extra layer of security to your account.</div>
+          </div>
+        </div>
+
+        <div id="setup-2fa-alert"></div>
+        <div id="qr-section" style="display:none;margin-bottom:1.5rem;text-align:center">
+          <p class="text-secondary text-sm" style="margin-bottom:1rem">
+            Scan this QR code with <strong>Google Authenticator</strong> or any TOTP app.
+          </p>
+          <img id="qr-img" src="" alt="QR Code"
+            style="width:200px;height:200px;border-radius:var(--radius-md);border:4px solid var(--border-default);margin-bottom:1rem" />
+          <div>
+            <span class="text-muted text-xs">Manual entry key: </span>
+            <span id="manual-key" class="font-mono text-sm" style="color:var(--cyan)"></span>
+          </div>
+        </div>
+
+        <div id="verify-section" style="display:none;margin-bottom:1rem">
+          <div class="form-group">
+            <label class="form-label" for="totp-verify">Enter 6-digit code from app to confirm</label>
+            <input type="text" id="totp-verify" class="form-control font-mono"
+              placeholder="000000" maxlength="6"
+              style="text-align:center;font-size:1.25rem;letter-spacing:0.25em" />
+          </div>
+        </div>
+
+        <div id="backup-section" style="display:none;margin-bottom:1.5rem">
+          <div class="alert alert-success" style="margin-bottom:1rem">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>2FA enabled! Save these backup codes — they can only be shown once.</span>
+          </div>
+          <div id="backup-codes-grid" class="grid-2" style="gap:0.5rem;margin-bottom:1rem"></div>
+          <button class="btn btn-ghost btn-sm" onclick="copyBackupCodes()">
+            <i class="bi bi-clipboard"></i> Copy All Codes
+          </button>
+        </div>
+
+        <div class="flex gap-3">
+          <button type="button" id="setup-btn" class="btn btn-primary" onclick="start2FASetup()">
+            <i class="bi bi-qr-code-scan"></i> Set Up 2FA
+          </button>
+          <button type="button" id="enable-btn" class="btn btn-success" style="display:none" onclick="enable2FA()">
+            <i class="bi bi-shield-check"></i> Verify & Enable
+          </button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+let backupCodesList = [];
+
+async function start2FASetup() {
+  const btn = document.getElementById('setup-btn');
+  setButtonLoading(btn, true);
+  const res = await API.post('/auth/2fa/setup', {});
+  setButtonLoading(btn, false);
+
+  if (!res?.success) {
+    Toast.error(res?.message || 'Setup failed.');
+    return;
+  }
+
+  document.getElementById('qr-img').src          = 'data:image/png;base64,' + res.qr_code;
+  document.getElementById('manual-key').textContent = res.secret;
+  document.getElementById('qr-section').style.display    = 'block';
+  document.getElementById('verify-section').style.display = 'block';
+  document.getElementById('enable-btn').style.display    = 'inline-flex';
+  btn.style.display = 'none';
+}
+
+async function enable2FA() {
+  const code = document.getElementById('totp-verify').value.trim();
+  if (!code) { Toast.error('Enter the 6-digit code first.'); return; }
+
+  const btn = document.getElementById('enable-btn');
+  setButtonLoading(btn, true);
+  const res = await API.post('/auth/2fa/enable', { code });
+  setButtonLoading(btn, false);
+
+  if (!res?.success) { Toast.error(res?.message || 'Invalid code.'); return; }
+
+  backupCodesList = res.backup_codes;
+  document.getElementById('backup-section').style.display = 'block';
+  document.getElementById('verify-section').style.display = 'none';
+  document.getElementById('qr-section').style.display     = 'none';
+  btn.style.display = 'none';
+
+  document.getElementById('backup-codes-grid').innerHTML = backupCodesList.map(code => `
+    <div class="font-mono text-sm" style="background:var(--bg-elevated);padding:0.5rem 0.75rem;
+      border-radius:var(--radius-sm);border:1px solid var(--border-default);text-align:center;
+      color:var(--cyan)">${code}</div>
+  `).join('');
+
+  currentUser.totp_enabled = true;
+  Auth.setUser(currentUser);
+  Toast.success('2FA enabled successfully!');
+}
+
+async function disable2FA() {
+  const password = document.getElementById('disable-password').value;
+  if (!password) { Toast.error('Enter your password.'); return; }
+
+  const btn = document.getElementById('disable-2fa-btn');
+  setButtonLoading(btn, true);
+  const res = await API.post('/auth/2fa/disable', { password });
+  setButtonLoading(btn, false);
+
+  if (res?.success) {
+    currentUser.totp_enabled = false;
+    Auth.setUser(currentUser);
+    Toast.success('2FA disabled.');
+    render2FAPanel();
+  } else {
+    const alertEl = document.getElementById('disable-2fa-alert');
+    alertEl.innerHTML = `<div class="alert alert-error" style="margin-bottom:1rem">
+      <i class="bi bi-x-circle-fill"></i><span>${res?.message||'Failed.'}</span></div>`;
+  }
+}
+
+function copyBackupCodes() {
+  navigator.clipboard.writeText(backupCodesList.join('\n'));
+  Toast.success('Backup codes copied to clipboard.');
+}
+
+// ── Sessions ──────────────────────────────────────────────────────
+async function loadSessions() {
+  const res = await API.get('/user/sessions');
+  const container = document.getElementById('sessions-list');
+  const countEl   = document.getElementById('sessions-count');
+  if (!res?.success) { container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem">Failed to load.</div>'; return; }
+
+  const sessions = res.sessions;
+  if (countEl) countEl.textContent = sessions.length;
+
+  if (!sessions.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem"><i class="bi bi-laptop" style="font-size:2rem;display:block;margin-bottom:0.5rem"></i>No active sessions found.</div>';
+    return;
+  }
+
+  container.innerHTML = sessions.map((s, i) => `
+    <div class="glass-card p-4" style="margin-bottom:0.75rem">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div style="width:40px;height:40px;background:rgba(59,130,246,0.12);border-radius:var(--radius-md);
+            display:flex;align-items:center;justify-content:center;border:1px solid rgba(59,130,246,0.2)">
+            <i class="bi bi-laptop" style="color:var(--electric-blue);font-size:1.1rem"></i>
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:0.875rem;color:var(--text-primary)">
+              Session ${i + 1}
+              ${i === 0 ? '<span class="badge badge-green" style="margin-left:0.5rem">Current</span>' : ''}
+            </div>
+            <div class="text-xs font-mono text-muted">${s.ip_address || '—'}</div>
+          </div>
+        </div>
+        <div class="text-xs text-secondary">${s.last_activity ? new Date(s.last_activity).toLocaleString() : '—'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function revokeAll() {
+  if (!confirm('Revoke all sessions? You will be logged out.')) return;
+  await logout();
+}
+
+// ── Login History ─────────────────────────────────────────────────
+async function loadLoginHistory() {
+  const res = await API.get('/user/login-history?page=' + histCurrPage);
+  const tbody = document.getElementById('history-tbody');
+  if (!res?.success) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem">Failed to load.</td></tr>'; return; }
+
+  histTotalPages = res.pages || 1;
+  document.getElementById('hist-prev').disabled = histCurrPage <= 1;
+  document.getElementById('hist-next').disabled = histCurrPage >= histTotalPages;
+  document.getElementById('hist-page-label').textContent = `Page ${histCurrPage} of ${histTotalPages} (${res.total} total)`;
+
+  const statusColors = { success:'green', failure:'red', warning:'amber' };
+
+  if (!res.history.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem">No login history yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = res.history.map(h => `
+    <tr>
+      <td><span class="badge badge-${statusColors[h.status]||'blue'}">${h.status}</span></td>
+      <td class="font-mono text-sm text-secondary">${h.ip_address || '—'}</td>
+      <td><span class="badge badge-blue text-xs">${h.device_type || '—'}</span></td>
+      <td class="text-sm text-secondary">${h.browser || '—'}</td>
+      <td class="text-sm text-secondary">${h.os || '—'}</td>
+      <td class="text-sm text-secondary" style="white-space:nowrap">${new Date(h.created_at).toLocaleString()}</td>
+    </tr>
+  `).join('');
+}
+
+function histPage(dir) {
+  histCurrPage = Math.max(1, Math.min(histTotalPages, histCurrPage + dir));
+  loadLoginHistory();
+}
+</script>
+{% endblock %}

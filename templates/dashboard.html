@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+<div class="radial-glow"></div>
+
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <a href="/" class="sidebar-brand">
+      <span class="brand-icon" style="width:28px;height:28px;font-size:0.875rem"><i class="bi bi-shield-lock-fill"></i></span>
+      SecureHub
+    </a>
+
+    <span class="sidebar-section-label">Main</span>
+    <a href="#" class="sidebar-link active" onclick="showSection('overview', this); return false;">
+      <i class="bi bi-grid-fill si-icon"></i> Dashboard
+    </a>
+    <a href="/profile" class="sidebar-link">
+      <i class="bi bi-person-fill si-icon"></i> Profile
+    </a>
+
+    <span class="sidebar-section-label">Security</span>
+    <a href="#" class="sidebar-link" onclick="showSection('sessions', this); return false;">
+      <i class="bi bi-laptop si-icon"></i> Sessions
+    </a>
+    <a href="#" class="sidebar-link" onclick="showSection('auditlog', this); return false;">
+      <i class="bi bi-activity si-icon"></i> Audit Log
+    </a>
+
+    <div class="sidebar-bottom">
+      <div class="glass-card" style="padding:0.875rem;margin-bottom:0.5rem">
+        <div class="flex items-center gap-3">
+          <div class="avatar" data-user-avatar>?</div>
+          <div style="min-width:0">
+            <div style="font-weight:600;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-user-name>User</div>
+            <div class="badge badge-blue" data-user-role style="margin-top:2px">user</div>
+          </div>
+        </div>
+      </div>
+      <a href="#" class="sidebar-link" data-action="logout">
+        <i class="bi bi-box-arrow-left si-icon"></i> Sign Out
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- ── OVERVIEW SECTION ───────────────────────────────────── -->
+    <div id="section-overview">
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <p>Welcome back, <span data-user-name>User</span>. Here's your account overview.</p>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid-4 stagger">
+        <div class="glass-card stat-card">
+          <span class="stat-label">Account Status</span>
+          <span class="badge badge-green" id="stat-status" style="margin-top:0.25rem">
+            <i class="bi bi-circle-fill" style="font-size:0.5rem"></i> Active
+          </span>
+        </div>
+        <div class="glass-card stat-card">
+          <span class="stat-label">Role</span>
+          <span class="stat-value" id="stat-role" style="font-size:1.4rem" data-user-role>User</span>
+        </div>
+        <div class="glass-card stat-card">
+          <span class="stat-label">Email Verified</span>
+          <span id="stat-verified" class="badge badge-amber" style="margin-top:0.25rem">Pending</span>
+        </div>
+        <div class="glass-card stat-card">
+          <span class="stat-label">Member Since</span>
+          <span class="font-mono text-sm" id="stat-since" style="color:var(--text-secondary);margin-top:0.25rem">—</span>
+        </div>
+      </div>
+
+      <!-- Account Details -->
+      <div class="glass-card p-6 mt-6">
+        <h2 style="font-size:1.05rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:0.5rem">
+          <i class="bi bi-person-fill" style="color:var(--electric-blue)"></i> Account Details
+        </h2>
+        <div class="grid-2 gap-6" id="account-details">
+          <div class="skeleton" style="height:20px;margin-bottom:0.5rem"></div>
+          <div class="skeleton" style="height:20px;margin-bottom:0.5rem"></div>
+          <div class="skeleton" style="height:20px;margin-bottom:0.5rem"></div>
+          <div class="skeleton" style="height:20px;margin-bottom:0.5rem"></div>
+        </div>
+      </div>
+
+      <!-- Recent Activity Preview -->
+      <div class="glass-card mt-6">
+        <div class="p-6 flex justify-between items-center" style="border-bottom:1px solid var(--border-subtle)">
+          <h2 style="font-size:1.05rem;display:flex;align-items:center;gap:0.5rem">
+            <i class="bi bi-activity" style="color:var(--electric-blue)"></i> Recent Activity
+          </h2>
+          <button class="btn btn-ghost btn-sm" onclick="showSection('auditlog', null); return false;">
+            View All <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr><th>Event</th><th>Status</th><th>IP Address</th><th>Time</th></tr>
+            </thead>
+            <tbody id="audit-preview-tbody">
+              <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SESSIONS SECTION ───────────────────────────────────── -->
+    <div id="section-sessions" style="display:none">
+      <div class="page-header">
+        <h1>Active Sessions</h1>
+        <p>Devices and locations where your account is currently signed in</p>
+      </div>
+
+      <div class="glass-card">
+        <div class="p-6 flex justify-between items-center" style="border-bottom:1px solid var(--border-subtle)">
+          <h2 style="font-size:1.05rem;display:flex;align-items:center;gap:0.5rem">
+            <i class="bi bi-laptop" style="color:var(--electric-blue)"></i> Sessions
+            <span class="badge badge-blue" id="sessions-count" style="margin-left:0.5rem">0</span>
+          </h2>
+          <button class="btn btn-danger btn-sm" onclick="revokeAllSessions()">
+            <i class="bi bi-shield-x"></i> Revoke All
+          </button>
+        </div>
+        <div id="sessions-list" style="padding:1.5rem">
+          <div style="text-align:center;color:var(--text-muted);padding:2rem">Loading sessions…</div>
+        </div>
+      </div>
+
+      <!-- Security Tips -->
+      <div class="glass-card p-6 mt-6">
+        <h2 style="font-size:1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem">
+          <i class="bi bi-lightbulb-fill" style="color:var(--amber)"></i> Security Tips
+        </h2>
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3">
+            <i class="bi bi-check-circle-fill" style="color:var(--emerald)"></i>
+            <span class="text-secondary text-sm">Review active sessions regularly and revoke any you don't recognize.</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <i class="bi bi-check-circle-fill" style="color:var(--emerald)"></i>
+            <span class="text-secondary text-sm">If you see an unfamiliar IP address, change your password immediately.</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <i class="bi bi-check-circle-fill" style="color:var(--emerald)"></i>
+            <span class="text-secondary text-sm">Always sign out on shared or public computers.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AUDIT LOG SECTION ──────────────────────────────────── -->
+    <div id="section-auditlog" style="display:none">
+      <div class="page-header">
+        <h1>Audit Log</h1>
+        <p>Complete history of all activity on your account</p>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid-3 stagger" id="audit-summary" style="margin-bottom:1.5rem">
+        <div class="glass-card stat-card">
+          <span class="stat-label">Total Events</span>
+          <span class="stat-value" id="audit-total-count">—</span>
+        </div>
+        <div class="glass-card stat-card">
+          <span class="stat-label">Successful</span>
+          <span class="stat-value" id="audit-success-count" style="color:var(--emerald)">—</span>
+        </div>
+        <div class="glass-card stat-card">
+          <span class="stat-label">Failed / Warnings</span>
+          <span class="stat-value" id="audit-fail-count" style="color:var(--rose)">—</span>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="glass-card p-4" style="margin-bottom:1.5rem">
+        <div class="flex gap-3 items-center flex-wrap">
+          <select id="log-filter-status" class="form-control" style="width:160px" onchange="loadFullAuditLog()">
+            <option value="">All Statuses</option>
+            <option value="success">Success</option>
+            <option value="failure">Failure</option>
+            <option value="warning">Warning</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadFullAuditLog()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card">
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Event</th><th>Status</th><th>IP Address</th>
+                <th>Details</th><th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="audit-full-tbody">
+              <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Pagination -->
+        <div class="flex items-center justify-between p-6" style="border-top:1px solid var(--border-subtle)">
+          <button class="btn btn-ghost btn-sm" id="log-prev" onclick="logPage(-1)" disabled>
+            <i class="bi bi-chevron-left"></i> Previous
+          </button>
+          <span class="text-sm text-secondary" id="log-page-label">Page 1</span>
+          <button class="btn btn-ghost btn-sm" id="log-next" onclick="logPage(1)">
+            Next <i class="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentLogPage  = 1;
+let totalLogPages   = 1;
+let allLogsCache    = [];
+
+// ── Init ──────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!guardRoute(true)) return;
+
+  const res = await API.get('/auth/me');
+  if (!res || !res.success) { Auth.clearTokens(); window.location.href = '/login'; return; }
+
+  const user = res.user;
+  Auth.setUser(user);
+  renderUserInfo();
+
+  // Populate stats
+  const statusEl   = document.getElementById('stat-status');
+  const verifiedEl = document.getElementById('stat-verified');
+
+  statusEl.innerHTML = user.is_active
+    ? '<i class="bi bi-circle-fill" style="font-size:0.5rem"></i> Active'
+    : '<i class="bi bi-circle-fill" style="font-size:0.5rem"></i> Inactive';
+  statusEl.className = 'badge badge-' + (user.is_active ? 'green' : 'red');
+
+  verifiedEl.textContent = user.is_verified ? 'Verified' : 'Pending';
+  verifiedEl.className   = 'badge badge-' + (user.is_verified ? 'green' : 'amber');
+
+  if (user.created_at) {
+    document.getElementById('stat-since').textContent =
+      new Date(user.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+  }
+
+  // Account details grid
+  document.getElementById('account-details').innerHTML = `
+    <div>
+      <div class="form-label">Full Name</div>
+      <div style="color:var(--text-primary);margin-top:0.25rem">${user.full_name || '—'}</div>
+    </div>
+    <div>
+      <div class="form-label">Username</div>
+      <div style="color:var(--text-primary);margin-top:0.25rem;font-family:var(--font-mono)">@${user.username}</div>
+    </div>
+    <div>
+      <div class="form-label">Email</div>
+      <div style="color:var(--text-primary);margin-top:0.25rem">${user.email}</div>
+    </div>
+    <div>
+      <div class="form-label">Last Login</div>
+      <div style="color:var(--text-secondary);margin-top:0.25rem;font-size:0.875rem">
+        ${user.last_login_at ? new Date(user.last_login_at).toLocaleString() : 'First session'}
+      </div>
+    </div>
+    <div>
+      <div class="form-label">Last Login IP</div>
+      <div style="color:var(--text-secondary);margin-top:0.25rem;font-family:var(--font-mono);font-size:0.875rem">
+        ${user.last_login_ip || '—'}
+      </div>
+    </div>
+    <div>
+      <div class="form-label">Failed Attempts</div>
+      <div style="color:var(--text-secondary);margin-top:0.25rem">${user.failed_login_attempts || 0}</div>
+    </div>
+  `;
+
+  // Load audit preview
+  await loadAuditPreview();
+});
+
+// ── Section Navigation ────────────────────────────────────────────
+function showSection(name, linkEl) {
+  ['overview', 'sessions', 'auditlog'].forEach(s => {
+    document.getElementById('section-' + s).style.display = 'none';
+  });
+  document.getElementById('section-' + name).style.display = 'block';
+
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  if (linkEl) linkEl.classList.add('active');
+
+  if (name === 'sessions') loadSessions();
+  if (name === 'auditlog') loadFullAuditLog();
+}
+
+// ── Sessions ──────────────────────────────────────────────────────
+async function loadSessions() {
+  const container = document.getElementById('sessions-list');
+  const res = await API.get('/user/sessions');
+
+  if (!res?.success) {
+    container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem">Failed to load sessions.</div>';
+    return;
+  }
+
+  const sessions = res.sessions;
+  document.getElementById('sessions-count').textContent = sessions.length;
+
+  if (!sessions.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem">No active sessions found.</div>';
+    return;
+  }
+
+  container.innerHTML = sessions.map((s, i) => `
+    <div class="glass-card p-4" style="margin-bottom:0.75rem;${i===0?'border-color:rgba(59,130,246,0.3)':''}">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div style="width:40px;height:40px;background:rgba(59,130,246,0.12);border-radius:var(--radius-md);
+            display:flex;align-items:center;justify-content:center;border:1px solid rgba(59,130,246,0.2)">
+            <i class="bi bi-${getDeviceIcon(s.device_info || s.user_agent || '')}"
+              style="color:var(--electric-blue);font-size:1.1rem"></i>
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:0.875rem;color:var(--text-primary)">
+              ${s.device_info || 'Unknown Device'}
+              ${i===0 ? '<span class="badge badge-green" style="margin-left:0.5rem">Current</span>' : ''}
+            </div>
+            <div class="text-xs text-muted" style="margin-top:2px;font-family:var(--font-mono)">
+              ${s.ip_address || '—'}
+            </div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="text-xs text-secondary">Last active</div>
+          <div class="text-xs font-mono" style="color:var(--text-secondary)">
+            ${s.last_activity ? new Date(s.last_activity).toLocaleString() : '—'}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function getDeviceIcon(ua) {
+  ua = ua.toLowerCase();
+  if (ua.includes('mobile') || ua.includes('android') || ua.includes('iphone')) return 'phone';
+  if (ua.includes('tablet') || ua.includes('ipad')) return 'tablet';
+  return 'laptop';
+}
+
+async function revokeAllSessions() {
+  if (!confirm('Revoke all sessions? You will be logged out.')) return;
+  await logout();
+}
+
+// ── Audit Log Preview ─────────────────────────────────────────────
+async function loadAuditPreview() {
+  const tbody = document.getElementById('audit-preview-tbody');
+  const res   = await API.get('/user/audit-logs?page=1');
+
+  if (!res?.success || !res.logs.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem">No activity recorded yet.</td></tr>';
+    return;
+  }
+
+  allLogsCache = res.logs;
+  const statusColors = { success:'green', failure:'red', warning:'amber' };
+  tbody.innerHTML = res.logs.slice(0, 6).map(l => `
+    <tr>
+      <td style="color:var(--text-primary);font-weight:500">${l.action}</td>
+      <td><span class="badge badge-${statusColors[l.status]||'blue'}">${l.status}</span></td>
+      <td class="font-mono text-sm">${l.ip_address || '—'}</td>
+      <td class="text-sm text-secondary">${new Date(l.created_at).toLocaleString()}</td>
+    </tr>
+  `).join('');
+}
+
+// ── Full Audit Log ────────────────────────────────────────────────
+async function loadFullAuditLog() {
+  const tbody      = document.getElementById('audit-full-tbody');
+  const statusFilt = document.getElementById('log-filter-status').value;
+
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem">Loading…</td></tr>';
+
+  const res = await API.get('/user/audit-logs?page=' + currentLogPage);
+
+  if (!res?.success) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--rose);padding:2rem">Failed to load logs.</td></tr>';
+    return;
+  }
+
+  totalLogPages = res.pages || 1;
+  allLogsCache  = res.logs;
+
+  // Update summary counts
+  const successCount = res.logs.filter(l => l.status === 'success').length;
+  const failCount    = res.logs.filter(l => l.status !== 'success').length;
+  document.getElementById('audit-total-count').textContent   = res.total || res.logs.length;
+  document.getElementById('audit-success-count').textContent = successCount;
+  document.getElementById('audit-fail-count').textContent    = failCount;
+
+  // Apply filter
+  let logs = res.logs;
+  if (statusFilt) logs = logs.filter(l => l.status === statusFilt);
+
+  const statusColors = { success:'green', failure:'red', warning:'amber' };
+
+  if (!logs.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem">No matching events.</td></tr>';
+  } else {
+    tbody.innerHTML = logs.map(l => `
+      <tr>
+        <td style="color:var(--text-primary);font-weight:500;white-space:nowrap">${l.action}</td>
+        <td><span class="badge badge-${statusColors[l.status]||'blue'}">${l.status}</span></td>
+        <td class="font-mono text-sm text-secondary">${l.ip_address || '—'}</td>
+        <td class="text-xs text-muted" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+          title="${l.details||''}">
+          ${l.details || '—'}
+        </td>
+        <td class="text-sm text-secondary" style="white-space:nowrap">
+          ${new Date(l.created_at).toLocaleString()}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // Pagination controls
+  document.getElementById('log-prev').disabled = currentLogPage <= 1;
+  document.getElementById('log-next').disabled = currentLogPage >= totalLogPages;
+  document.getElementById('log-page-label').textContent =
+    'Page ' + currentLogPage + ' of ' + totalLogPages +
+    ' (' + (res.total || res.logs.length) + ' total)';
+}
+
+function logPage(dir) {
+  currentLogPage = Math.max(1, Math.min(totalLogPages, currentLogPage + dir));
+  loadFullAuditLog();
+}
+</script>
+{% endblock %}

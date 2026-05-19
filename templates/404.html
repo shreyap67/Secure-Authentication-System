@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found{% endblock %}
+{% block body %}
+<div class="radial-glow"></div>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;position:relative;z-index:1">
+  <div class="text-center animate-fade-in-up" style="max-width:480px">
+    <div style="font-family:var(--font-display);font-size:7rem;font-weight:800;line-height:1;background:var(--grad-text);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:1rem">404</div>
+    <h1 style="font-size:1.75rem;font-weight:700;margin-bottom:0.75rem">Page Not Found</h1>
+    <p class="text-secondary" style="margin-bottom:2rem">The page you're looking for doesn't exist or has been moved.</p>
+    <div class="flex gap-3" style="justify-content:center">
+      <a href="/"          class="btn btn-primary"><i class="bi bi-house"></i> Go Home</a>
+      <a href="/dashboard" class="btn btn-ghost"><i class="bi bi-grid"></i> Dashboard</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

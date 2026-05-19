@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Sign In{% endblock %}
+
+{% block body %}
+<div class="radial-glow"></div>
+
+<div class="auth-layout">
+
+  <!-- Brand Panel -->
+  <div class="auth-brand-panel">
+    <div style="position:relative;z-index:1;max-width:440px">
+      <a href="/" style="display:flex;align-items:center;gap:0.5rem;text-decoration:none;margin-bottom:3rem">
+        <span class="brand-icon"><i class="bi bi-shield-lock-fill"></i></span>
+        <span style="font-family:var(--font-display);font-weight:700;font-size:1.2rem;color:var(--text-primary)">SecureHub</span>
+      </a>
+      <h2 style="font-size:2rem;font-weight:700;margin-bottom:1rem">Secure by design.<br><span class="text-gradient">Trusted at scale.</span></h2>
+      <p class="text-secondary" style="font-size:1rem;line-height:1.7;margin-bottom:2.5rem">Enterprise authentication with JWT, bcrypt, and role-based access — built for real production workloads.</p>
+      <div class="flex flex-col gap-3">
+        {% for item in [('bi-shield-check','JWT tokens expire automatically'),('bi-lock-fill','Passwords never stored in plain text'),('bi-person-check-fill','Role-based access control'),('bi-activity','Full audit log on every event')] %}
+        <div class="flex items-center gap-3">
+          <div style="width:32px;height:32px;background:rgba(59,130,246,0.12);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;border:1px solid rgba(59,130,246,0.2);flex-shrink:0">
+            <i class="bi {{ item[0] }}" style="color:var(--electric-blue);font-size:0.9rem"></i>
+          </div>
+          <span class="text-secondary text-sm">{{ item[1] }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Panel -->
+  <div class="auth-form-panel bg-grid">
+    <div class="auth-form-box animate-fade-in-up">
+
+      <div class="auth-form-header">
+        <h1>Welcome back</h1>
+        <p class="text-secondary text-sm" style="margin-top:0.35rem">Sign in to your SecureHub account</p>
+      </div>
+
+      <div id="alert-container"></div>
+
+      <!-- action="#" and method="post" prevent browser GET submission -->
+      <form id="login-form" class="flex flex-col gap-4" novalidate action="#" method="post" onsubmit="return false;">
+
+        <div class="form-group">
+          <label class="form-label" for="identifier">Email or Username</label>
+          <div class="input-wrapper">
+            <i class="bi bi-person input-icon"></i>
+            <input type="text" id="identifier" name="identifier" class="form-control"
+              placeholder="john@example.com" autocomplete="off" required />
+          </div>
+          <span class="form-error" id="identifier-error"></span>
+        </div>
+
+        <div class="form-group">
+          <div class="flex justify-between items-center">
+            <label class="form-label" for="password">Password</label>
+            <a href="/forgot-password" class="text-xs" style="color:var(--text-link);text-decoration:none">Forgot password?</a>
+          </div>
+          <div class="input-wrapper">
+            <i class="bi bi-lock input-icon"></i>
+            <input type="password" id="password" name="password" class="form-control"
+              placeholder="••••••••" autocomplete="off" required />
+            <button type="button" class="input-toggle" data-toggle-password="password">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          <span class="form-error" id="password-error"></span>
+        </div>
+
+        <button type="button" id="login-btn" class="btn btn-gradient btn-full btn-lg mt-4"
+          onclick="handleLogin()">
+          <i class="bi bi-box-arrow-in-right"></i> Sign In
+        </button>
+      </form>
+
+      <p class="text-center text-sm mt-6" style="color:var(--text-secondary)">
+        Don't have an account?
+        <a href="/register" style="color:var(--text-link);text-decoration:none;font-weight:600">Create account</a>
+      </p>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Redirect if already logged in
+  if (Auth.isLoggedIn()) {
+    const u = Auth.getUser();
+    window.location.href = (u && u.role === 'admin') ? '/admin' : '/dashboard';
+  }
+
+  function showAlert(msg, type) {
+    const alertBox = document.getElementById('alert-container');
+    const icon = type === 'error' ? 'x-circle' : 'check-circle';
+    alertBox.innerHTML = `<div class="alert alert-${type}" style="margin-bottom:1.25rem">
+      <i class="bi bi-${icon}-fill"></i><span>${msg}</span></div>`;
+  }
+
+  async function handleLogin() {
+    clearFieldErrors();
+    document.getElementById('alert-container').innerHTML = '';
+
+    const identifier = document.getElementById('identifier').value.trim();
+    const password   = document.getElementById('password').value;
+    const btn        = document.getElementById('login-btn');
+
+    if (!identifier) { showFieldError('identifier', 'Email or username is required.'); return; }
+    if (!password)   { showFieldError('password', 'Password is required.'); return; }
+
+    setButtonLoading(btn, true);
+
+    const res = await API.post('/auth/login', { identifier, password }, false);
+
+    setButtonLoading(btn, false);
+
+    if (!res) return;
+
+    if (res.success && res.requires_2fa) {
+      // Store partial token and redirect to 2FA page
+      sessionStorage.setItem('2fa_partial_token', res.partial_token);
+      Toast.info('Please enter your 2FA code.');
+      setTimeout(() => { window.location.href = '/login/2fa'; }, 600);
+    } else if (res.success) {
+      Auth.setTokens(res.access_token, res.refresh_token);
+      Auth.setUser(res.user);
+      Toast.success('Welcome back, ' + res.user.username + '!');
+      setTimeout(() => {
+        window.location.href = res.user.role === 'admin' ? '/admin' : '/dashboard';
+      }, 600);
+    } else {
+      showAlert(res.message || 'Login failed. Please try again.', 'error');
+    }
+  }
+
+  // Also allow Enter key to submit
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('login-form').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); handleLogin(); }
+    });
+  });
+</script>
+{% endblock %}

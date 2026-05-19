@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Secure Authentication Platform{% endblock %}
+
+{% block body %}
+<div class="radial-glow"></div>
+
+<!-- Navigation -->
+<nav class="navbar bg-grid">
+  <a href="/" class="nav-brand">
+    <span class="brand-icon"><i class="bi bi-shield-lock-fill"></i></span>
+    SecureHub
+  </a>
+  <ul class="nav-links">
+    <li><a href="/login"    class="nav-link">Sign In</a></li>
+    <li><a href="/register" class="btn btn-primary btn-sm">Get Started</a></li>
+  </ul>
+</nav>
+
+<!-- Hero -->
+<section style="padding:6rem 2rem 4rem;text-align:center;position:relative;z-index:1">
+  <div class="animate-fade-in-up" style="animation-delay:0ms">
+    <span class="badge badge-blue" style="margin-bottom:1.25rem">
+      <i class="bi bi-shield-check"></i> Enterprise-Grade Security
+    </span>
+  </div>
+
+  <h1 class="animate-fade-in-up" style="font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;max-width:800px;margin:0 auto 1.5rem;animation-delay:80ms;line-height:1.08">
+    Authentication Infrastructure
+    <br><span class="text-gradient">Built for Scale</span>
+  </h1>
+
+  <p class="animate-fade-in-up" style="color:var(--text-secondary);font-size:1.125rem;max-width:540px;margin:0 auto 2.5rem;animation-delay:160ms">
+    Secure user management, JWT authentication, role-based access control, and enterprise security practices — production-ready from day one.
+  </p>
+
+  <div class="flex gap-3 animate-fade-in-up" style="justify-content:center;animation-delay:240ms">
+    <a href="/register" class="btn btn-gradient btn-xl">
+      <i class="bi bi-rocket-takeoff"></i> Start Building
+    </a>
+    <a href="/login" class="btn btn-ghost btn-xl">
+      <i class="bi bi-box-arrow-in-right"></i> Sign In
+    </a>
+  </div>
+</section>
+
+<!-- Feature Grid -->
+<section style="padding:2rem 2rem 6rem;position:relative;z-index:1;max-width:1200px;margin:0 auto">
+  <div class="grid-3 stagger">
+
+    <div class="glass-card p-6">
+      <div style="width:44px;height:44px;background:rgba(59,130,246,0.15);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;border:1px solid rgba(59,130,246,0.2)">
+        <i class="bi bi-key-fill" style="color:var(--electric-blue);font-size:1.2rem"></i>
+      </div>
+      <h3 style="font-size:1.05rem;margin-bottom:0.5rem">JWT Authentication</h3>
+      <p class="text-secondary text-sm">Access and refresh tokens with automatic expiry, token blacklisting, and secure rotation.</p>
+    </div>
+
+    <div class="glass-card p-6">
+      <div style="width:44px;height:44px;background:rgba(168,85,247,0.15);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;border:1px solid rgba(168,85,247,0.2)">
+        <i class="bi bi-shield-lock-fill" style="color:var(--purple-dim);font-size:1.2rem"></i>
+      </div>
+      <h3 style="font-size:1.05rem;margin-bottom:0.5rem">Bcrypt Password Hashing</h3>
+      <p class="text-secondary text-sm">Passwords are hashed with bcrypt (configurable cost factor), salted automatically — never stored in plain text.</p>
+    </div>
+
+    <div class="glass-card p-6">
+      <div style="width:44px;height:44px;background:rgba(34,211,238,0.12);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;border:1px solid rgba(34,211,238,0.2)">
+        <i class="bi bi-people-fill" style="color:var(--cyan);font-size:1.2rem"></i>
+      </div>
+      <h3 style="font-size:1.05rem;margin-bottom:0.5rem">Role-Based Access</h3>
+      <p class="text-secondary text-sm">Admin, User, and Moderator roles with granular endpoint permissions and middleware guards.</p>
+    </div>
+
+    <div class="glass-card p-6">
+      <div style="width:44px;height:44px;background:rgba(16,185,129,0.12);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;border:1px solid rgba(16,185,129,0.2)">
+        <i class="bi bi-activity" style="color:var(--emerald);font-size:1.2rem"></i>
+      </div>
+      <h3 style="font-size:1.05rem;margin-bottom:0.5rem">Audit Logging</h3>
+      <p class="text-secondary text-sm">Every authentication event, login attempt, and admin action is logged with IP, user agent, and timestamp.</p>
+    </div>
+
+    <div class="glass-card p-6">
+      <div style="width:44px;height:44px;background:rgba(245,158,11,0.12);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;border:1px solid rgba(245,158,11,0.2)">
+        <i class="bi bi-lock-fill" style="color:var(--amber);font-size:1.2rem"></i>
+      </div>
+      <h3 style="font-size:1.05rem;margin-bottom:0.5rem">Account Lockout</h3>
+      <p class="text-secondary text-sm">Brute-force protection with progressive lockouts after configurable failed login attempts.</p>
+    </div>
+
+    <div class="glass-card p-6">
+      <div style="width:44px;height:44px;background:rgba(244,63,94,0.12);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem;border:1px solid rgba(244,63,94,0.2)">
+        <i class="bi bi-speedometer2" style="color:var(--rose);font-size:1.2rem"></i>
+      </div>
+      <h3 style="font-size:1.05rem;margin-bottom:0.5rem">Rate Limiting</h3>
+      <p class="text-secondary text-sm">Per-IP and per-route rate limiting guards login and registration endpoints against abuse.</p>
+    </div>
+
+  </div>
+
+  <!-- Tech Stack -->
+  <div style="margin-top:4rem;text-align:center">
+    <p style="font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:1.25rem">Powered By</p>
+    <div class="flex gap-3" style="justify-content:center;flex-wrap:wrap">
+      {% for tech in [('Python 3.12', 'bi-filetype-py', 'blue'), ('Flask', 'bi-lightning-charge-fill', 'purple'), ('PostgreSQL', 'bi-database-fill', 'cyan'), ('JWT', 'bi-key-fill', 'green'), ('bcrypt', 'bi-shield-fill-check', 'amber'), ('SQLAlchemy', 'bi-layers-fill', 'red')] %}
+      <span class="badge badge-{{ tech[2] }}" style="padding:0.4rem 1rem;font-size:0.8rem">
+        <i class="bi {{ tech[1] }}"></i> {{ tech[0] }}
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer style="padding:1.5rem 2rem;border-top:1px solid var(--border-subtle);text-align:center;position:relative;z-index:1">
+  <p class="text-muted text-sm">SecureHub © 2025 · Enterprise Authentication Platform · Built with Flask &amp; ❤️</p>
+</footer>
+{% endblock %}
